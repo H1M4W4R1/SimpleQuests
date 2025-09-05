@@ -16,17 +16,17 @@ namespace Systems.SimpleQuests.Data
         ///     Reference to the quest object this quest is based upon
         /// </summary>
         [field: SerializeReference] [NotNull] private readonly Quest _quest;
-        
+
         /// <summary>
         ///     Quest object this quest is based upon
         /// </summary>
         [NotNull] public Quest Quest => _quest;
-        
+
         /// <summary>
         ///     List of all objectives
         /// </summary>
         private readonly List<QuestObjective> _objectives = new();
-        
+
         /// <summary>
         ///     List of all instance objectives
         /// </summary>
@@ -36,7 +36,7 @@ namespace Systems.SimpleQuests.Data
         ///     State of the quest
         /// </summary>
         public QuestState State { get; private set; } = QuestState.Inactive;
-        
+
         /// <summary>
         ///     Adds an objective to the list
         /// </summary>
@@ -53,10 +53,10 @@ namespace Systems.SimpleQuests.Data
         {
             State = QuestState.InProgress;
             _quest.OnQuestStarted(this);
-            
-            // TODO: Set-up first objective as active (if none)
+
+            ActivateFirstInactiveObjectiveIfNoneAreInProgress();
         }
-        
+
         /// <summary>
         ///     Handle quest failure or completion states
         /// </summary>
@@ -67,14 +67,14 @@ namespace Systems.SimpleQuests.Data
                 State = QuestState.Completed;
                 _quest.OnQuestCompleted(this);
             }
-            
+
             if (IsAnyRequiredObjectiveFailed())
             {
                 State = QuestState.Failed;
                 _quest.OnQuestFailed(this);
             }
-            
-            // TODO: Set-up new objective as active?
+
+            ActivateFirstInactiveObjectiveIfNoneAreInProgress();
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace Systems.SimpleQuests.Data
                 if (!objective.IsRequired) continue;
                 if (objective.State != QuestState.Completed) return false;
             }
-            
+
             return true;
         }
 
@@ -103,7 +103,7 @@ namespace Systems.SimpleQuests.Data
                 if (!objective.IsRequired) continue;
                 if (objective.State == QuestState.Failed) return true;
             }
-            
+
             return false;
         }
 
@@ -126,6 +126,24 @@ namespace Systems.SimpleQuests.Data
         {
             IWithObjectives self = this;
             self.TickCompletionStatusCheck(this, deltaTime);
+        }
+
+        /// <summary>
+        ///     Activates the first inactive objective
+        /// </summary>
+        private void ActivateFirstInactiveObjectiveIfNoneAreInProgress()
+        {
+            for (int i = 0; i < Objectives.Count; i++)
+                if(Objectives[i].State == QuestState.InProgress) return;
+            
+            for (int i = 0; i < Objectives.Count; i++)
+            {
+                QuestObjective objective = Objectives[i];
+                if (objective.State != QuestState.Inactive) continue;
+                objective.State = QuestState.InProgress;
+                objective.OnQuestObjectiveStarted(this);
+                return;
+            }
         }
     }
 }
