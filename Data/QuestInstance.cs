@@ -133,15 +133,24 @@ namespace Systems.SimpleQuests.Data
         /// </summary>
         private void ActivateFirstInactiveObjectiveIfNoneAreInProgress()
         {
+            // Do not activate if any required objective is in progress
             for (int i = 0; i < Objectives.Count; i++)
-                if(Objectives[i].State == QuestState.InProgress) return;
-            
+            {
+                QuestObjective objective = Objectives[i];
+                if (!objective.IsRequired) continue;
+                if (objective.State == QuestState.InProgress) return;
+            }
+
             for (int i = 0; i < Objectives.Count; i++)
             {
                 QuestObjective objective = Objectives[i];
                 if (objective.State != QuestState.Inactive) continue;
                 objective.State = QuestState.InProgress;
                 objective.OnQuestObjectiveStarted(this);
+                
+                // Check if required, if not then continue until first required objective is met
+                // this is intended to activate the first required objective and all preceding optional objectives
+                if (!objective.IsRequired) continue;
                 return;
             }
         }
