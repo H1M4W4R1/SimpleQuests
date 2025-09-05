@@ -135,10 +135,10 @@ The `QuestAPI` provides several methods for managing quests:
 # Objective Management
 
 Objectives are automatically managed by the quest system:
-- Only one objective can be active at a time (unless you override this behavior like `CombinedQuestObjective`)
-- When an required objective completes or fails, the next inactive required objective and all optional objectives before it becomes active
-- Required objectives must be completed for the quest to succeed
-- Optional objectives (when `IsRequired` returns false) can be skipped
+- Only one **required** objective can be active at a time (unless you override this behavior like `CombinedQuestObjective`)
+- When an **required** objective completes, the next inactive required objective and all optional objectives before it (and after previous required objective) becomes active
+- Required objectives must be completed for the quest to succeed, so if any of them fails the entire quest fails
+- Optional objectives (when `IsRequired` returns false) can be skipped or failed without consequences
 
 # Custom Objective Validation
 
@@ -154,6 +154,6 @@ public override bool ShouldBeFailed()
 
 # Quest Database Integration
 
-Quests are automatically registered in the `QuestDatabase` using the `[AutoCreate]` attribute. This allows the system to find and instantiate quests when needed.
+Quests are automatically registered in the `QuestDatabase` using the `[AutoCreate]` attribute. This allows the system to find quests when needed.
 
 For operation construction and error handling, you can review the `QuestOperations` static class.
