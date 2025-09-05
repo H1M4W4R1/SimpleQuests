@@ -40,20 +40,13 @@ namespace Systems.SimpleQuests.Abstract.Markers
         {
             // Only handle objectives that are in progress
             if (State != QuestState.InProgress) return;
-            
-            // Handle objectives tick
-            for (int i = 0; i < Objectives.Count; i++)
-            {
-                QuestObjective objective = Objectives[i];
-                objective.OnQuestObjectiveTick(questInstance, deltaTime);
-            }
-            
+
             // Handle optional objectives
             for (int i = 0; i < Objectives.Count; i++)
             {
                 QuestObjective objective = Objectives[i];
                 if (objective.IsRequired) continue;
-                
+
                 VerifyObjectiveCompletionStatus(questInstance, objective, deltaTime);
             }
 
@@ -62,7 +55,7 @@ namespace Systems.SimpleQuests.Abstract.Markers
             {
                 QuestObjective objective = Objectives[i];
                 if (!objective.IsRequired) continue;
-                
+
                 VerifyObjectiveCompletionStatus(questInstance, objective, deltaTime);
             }
 
@@ -78,8 +71,15 @@ namespace Systems.SimpleQuests.Abstract.Markers
             [NotNull] QuestObjective objective,
             float deltaTime)
         {
+            // Ensure objective is in progress
+            if (objective.State != QuestState.InProgress) return;
+            
+            // Handle objective tick
+            objective.OnQuestObjectiveTick(questInstance, deltaTime);
+            
             // Handle cascade of objectives
-            if (objective is IWithObjectives withObjectives) withObjectives.TickCompletionStatusCheck(questInstance, deltaTime);
+            if (objective is IWithObjectives withObjectives)
+                withObjectives.TickCompletionStatusCheck(questInstance, deltaTime);
 
             // Handle completion
             if (objective.ShouldBeComplete())

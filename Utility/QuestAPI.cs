@@ -22,6 +22,11 @@ namespace Systems.SimpleQuests.Utility
         private static readonly List<QuestInstance> _currentQuests = new();
 
         /// <summary>
+        ///     Removes all quests from the list
+        /// </summary>
+        public static void ClearAllQuests() => _currentQuests.Clear();
+        
+        /// <summary>
         ///     Tries to start a quest
         /// </summary>
         public static OperationResult<QuestInstance> TryStartQuest<TQuest>()
