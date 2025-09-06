@@ -58,6 +58,32 @@ namespace Systems.SimpleQuests.Data
         }
 
         /// <summary>
+        ///     Forces the quest to finish
+        /// </summary>
+        internal void ForceFinish()
+        {
+            for(int i = 0; i < _objectives.Count; i++)
+            {
+                QuestObjective objective = _objectives[i];
+                if (!objective.IsRequired) continue;
+                objective.State = QuestState.Completed;
+            }
+        }
+
+        /// <summary>
+        ///     Forces the quest to fail
+        /// </summary>
+        internal void ForceFail()
+        {
+            for(int i = 0; i < _objectives.Count; i++)
+            {
+                QuestObjective objective = _objectives[i];
+                if (!objective.IsRequired) continue;
+                objective.State = QuestState.Failed;
+            }
+        }
+        
+        /// <summary>
         ///     Handle quest failure or completion states
         /// </summary>
         void IWithObjectives.AfterQuestIterationComplete()

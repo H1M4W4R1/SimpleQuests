@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
 using Systems.SimpleCore.Operations;
+using Systems.SimpleCore.Storage;
 using Systems.SimpleCore.Timing;
 using Systems.SimpleQuests.Abstract;
 using Systems.SimpleQuests.Data;
@@ -15,7 +16,7 @@ namespace Systems.SimpleQuests.Utility
         ///     Variable to check if the tick system is already hooked
         /// </summary>
         private static bool _isTickSystemHooked;
-        
+
         /// <summary>
         ///     List of current quests
         /// </summary>
@@ -25,7 +26,81 @@ namespace Systems.SimpleQuests.Utility
         ///     Removes all quests from the list
         /// </summary>
         public static void ClearAllQuests() => _currentQuests.Clear();
-        
+
+        /// <summary>
+        ///     Forces a quest to finish
+        /// </summary>
+        /// <typeparam name="TQuest">The quest to finish</typeparam>
+        /// <returns>True if the quest was found and finished, false otherwise</returns>
+        public static bool CompleteQuest<TQuest>()
+            where TQuest : Quest, new()
+        {
+            // Find instance and finish it
+            for (int i = 0; i < _currentQuests.Count; i++)
+            {
+                if (_currentQuests[i].Quest is not TQuest) continue;
+                _currentQuests[i].ForceFinish();
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        ///     Forces a quest to finish
+        /// </summary>
+        /// <param name="quest">Quest to finish</param>
+        /// <returns>True if the quest was found and finished, false otherwise</returns>
+        public static bool CompleteQuest([NotNull] Quest quest)
+        {
+            // Find instance and finish it
+            for (int i = 0; i < _currentQuests.Count; i++)
+            {
+                if (!ReferenceEquals(_currentQuests[i].Quest, quest)) continue;
+                _currentQuests[i].ForceFinish();
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        ///     Forces a quest to finish
+        /// </summary>
+        /// <typeparam name="TQuest">The quest to finish</typeparam>
+        /// <returns>True if the quest was found and finished, false otherwise</returns>
+        public static bool FailQuest<TQuest>()
+            where TQuest : Quest, new()
+        {
+            // Find instance and finish it
+            for (int i = 0; i < _currentQuests.Count; i++)
+            {
+                if (_currentQuests[i].Quest is not TQuest) continue;
+                _currentQuests[i].ForceFail();
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        ///     Forces a quest to finish
+        /// </summary>
+        /// <param name="quest">Quest to finish</param>
+        /// <returns>True if the quest was found and finished, false otherwise</returns>
+        public static bool FailQuest([NotNull] Quest quest)
+        {
+            // Find instance and finish it
+            for (int i = 0; i < _currentQuests.Count; i++)
+            {
+                if (!ReferenceEquals(_currentQuests[i].Quest, quest)) continue;
+                _currentQuests[i].ForceFail();
+                return true;
+            }
+
+            return false;
+        }
+
         /// <summary>
         ///     Tries to start a quest
         /// </summary>
@@ -34,18 +109,18 @@ namespace Systems.SimpleQuests.Utility
         {
             // Ensure tick system exists
             TickSystem.EnsureExists();
-            
+
             // and is hooked properly
             if (!_isTickSystemHooked)
             {
                 TickSystem.OnTick += OnTick;
                 _isTickSystemHooked = true;
             }
-            
+
             // Create new instance
             TQuest quest = QuestDatabase.GetExact<TQuest>();
             Assert.IsNotNull(quest, "Quest was not found in database");
-            
+
             // Check if quest can be started
             OperationResult result = quest.CanBeStarted();
             if (!result)
@@ -53,7 +128,7 @@ namespace Systems.SimpleQuests.Utility
                 quest.OnQuestStartFailed(result);
                 return result.WithData<QuestInstance>(null);
             }
-           
+
             // Create instance, start it and add to list
             QuestInstance instance = QuestInstance.FromQuest(quest);
             instance.Start();
@@ -64,35 +139,37 @@ namespace Systems.SimpleQuests.Utility
         /// <summary>
         ///     Gets all quest instances of a quest
         /// </summary>
-        [NotNull] public static List<TQuest> GetAllInstancesOf<TQuest>()
+        public static ROListAccess<TQuest> GetAllInstancesOf<TQuest>()
             where TQuest : Quest
         {
-            List<TQuest> instances = new();
+            RWListAccess<TQuest> list = RWListAccess<TQuest>.Create();
+            List<TQuest> refList = list.List;
 
             for (int i = 0; i < _currentQuests.Count; i++)
             {
-                if (_currentQuests[i].Quest is TQuest requestedQuest) instances.Add(requestedQuest);
+                if (_currentQuests[i].Quest is TQuest requestedQuest) refList.Add(requestedQuest);
             }
-
-            return instances;
+            
+            return list.ToReadOnly();
         }
 
         /// <summary>
         ///     Gets all quest instances of a quest
         /// </summary>
-        [NotNull] public static List<QuestInstance> GetAllInstancesOf([NotNull] Quest quest)
+        public static ROListAccess<QuestInstance> GetAllInstancesOf([NotNull] Quest quest)
         {
-            List<QuestInstance> instances = new();
+            RWListAccess<QuestInstance> list = RWListAccess<QuestInstance>.Create();
+            List<QuestInstance> refList = list.List;
 
             for (int i = 0; i < _currentQuests.Count; i++)
             {
-                if (ReferenceEquals(_currentQuests[i].Quest, quest)) instances.Add(_currentQuests[i]);
+                if (ReferenceEquals(_currentQuests[i].Quest, quest)) refList.Add(_currentQuests[i]);
             }
 
-            return instances;
+            return list.ToReadOnly();
         }
 
-        /// <summary>
+        /// <summary> 
         ///     Gets the first quest instance of a quest
         /// </summary>
         [CanBeNull] public static TQuest GetFirstQuestInstanceOf<TQuest>()
@@ -125,8 +202,7 @@ namespace Systems.SimpleQuests.Utility
         /// </summary>
         private static void OnTick(float deltaTime)
         {
-            for(int i = 0; i < _currentQuests.Count; i++)
-                _currentQuests[i].Tick(deltaTime);
+            for (int i = 0; i < _currentQuests.Count; i++) _currentQuests[i].Tick(deltaTime);
         }
     }
 }
