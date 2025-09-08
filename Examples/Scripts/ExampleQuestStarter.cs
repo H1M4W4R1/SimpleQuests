@@ -1,5 +1,4 @@
-﻿using System;
-using Systems.SimpleQuests.Utility;
+﻿using Systems.SimpleQuests.Utility;
 using UnityEngine;
 
 namespace Systems.SimpleQuests.Examples.Scripts

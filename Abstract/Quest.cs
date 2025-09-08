@@ -1,8 +1,6 @@
-﻿using System.Collections.Generic;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 using Systems.SimpleCore.Automation.Attributes;
 using Systems.SimpleCore.Operations;
-using Systems.SimpleQuests.Abstract.Markers;
 using Systems.SimpleQuests.Data;
 using Systems.SimpleQuests.Operations;
 using UnityEngine;
