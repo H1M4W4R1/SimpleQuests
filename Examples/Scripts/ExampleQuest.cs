@@ -1,5 +1,4 @@
-﻿using JetBrains.Annotations;
-using Systems.SimpleQuests.Abstract;
+﻿using Systems.SimpleQuests.Abstract;
 using Systems.SimpleQuests.Data;
 using UnityEngine;
 
@@ -7,9 +6,10 @@ namespace Systems.SimpleQuests.Examples.Scripts
 {
     public sealed class ExampleQuest : Quest
     {
-        [NotNull] public override QuestInstance Create(QuestInstance instance)
+        public override QuestInstance Create()
         {
-            return instance.WithObjective(new ExampleKeyObjective(KeyCode.A))
+            return base.Create()
+                .WithObjective(new ExampleKeyObjective(KeyCode.A))
                 .WithObjective(new ExampleKeyObjective(KeyCode.B))
                 .WithObjective(new ExampleKeyObjective(KeyCode.C));
         }

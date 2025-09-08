@@ -104,7 +104,7 @@ namespace Systems.SimpleQuests.Utility
         /// <summary>
         ///     Tries to start a quest
         /// </summary>
-        public static OperationResult<QuestInstance> TryStartQuest<TQuest>()
+        public static OperationResult TryStartQuest<TQuest>([CanBeNull] out QuestInstance instance)
             where TQuest : Quest, new()
         {
             // Ensure tick system exists
@@ -126,14 +126,15 @@ namespace Systems.SimpleQuests.Utility
             if (!result)
             {
                 quest.OnQuestStartFailed(result);
-                return result.WithData<QuestInstance>(null);
+                instance = null;
+                return result;
             }
 
             // Create instance, start it and add to list
-            QuestInstance instance = QuestInstance.FromQuest(quest);
+            instance = QuestInstance.FromQuest(quest);
             instance.Start();
             _currentQuests.Add(instance);
-            return QuestOperations.Started().WithData(instance);
+            return QuestOperations.Started();
         }
 
         /// <summary>

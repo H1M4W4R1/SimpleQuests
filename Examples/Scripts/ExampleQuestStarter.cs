@@ -8,7 +8,7 @@ namespace Systems.SimpleQuests.Examples.Scripts
         [ContextMenu("Start Quest")]
         private void StartQuest()
         {
-            QuestAPI.TryStartQuest<ExampleQuest>();
+            QuestAPI.TryStartQuest<ExampleQuest>(out _);
         }
 
         private void OnDestroy()

@@ -139,11 +139,11 @@ namespace Systems.SimpleQuests.Data
         [NotNull] public static QuestInstance FromQuest([NotNull] Quest fromQuest)
         {
             QuestInstance createdInstance = new(fromQuest);
-            QuestInstance instance = fromQuest.Create(createdInstance);
+            QuestInstance instance = fromQuest.Create();
             return instance;
         }
 
-        private QuestInstance([NotNull] Quest fromQuest)
+        internal QuestInstance([NotNull] Quest fromQuest)
         {
             _quest = fromQuest;
         }
