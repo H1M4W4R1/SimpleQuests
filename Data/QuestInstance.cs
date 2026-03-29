@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using Systems.SimpleQuests.Abstract;
 using Systems.SimpleQuests.Abstract.Markers;
 using Systems.SimpleQuests.Data.Enums;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Systems.SimpleQuests.Data
 {
@@ -40,8 +42,13 @@ namespace Systems.SimpleQuests.Data
         /// <summary>
         ///     Adds an objective to the list
         /// </summary>
-        [NotNull] public QuestInstance WithObjective(QuestObjective objective)
+        [NotNull] public QuestInstance WithObjective([CanBeNull] QuestObjective objective)
         {
+            if (ReferenceEquals(objective, null))
+            {
+                Debug.LogError($"Tried to add null objective to quest {Quest.name}");
+                return this;
+            }
             _objectives.Add(objective);
             return this;
         }
@@ -58,7 +65,8 @@ namespace Systems.SimpleQuests.Data
         }
 
         /// <summary>
-        ///     Forces the quest to finish
+        ///     Forces the quest to finish by completing all required objectives.
+        ///     The quest's own state will update on the next tick via AfterQuestIterationComplete.
         /// </summary>
         internal void ForceFinish()
         {
@@ -71,7 +79,8 @@ namespace Systems.SimpleQuests.Data
         }
 
         /// <summary>
-        ///     Forces the quest to fail
+        ///     Forces the quest to fail by failing all required objectives.
+        ///     The quest's own state will update on the next tick via AfterQuestIterationComplete.
         /// </summary>
         internal void ForceFail()
         {
@@ -88,16 +97,15 @@ namespace Systems.SimpleQuests.Data
         /// </summary>
         void IWithObjectives.AfterQuestIterationComplete()
         {
-            if (AreRequiredObjectivesComplete())
-            {
-                State = QuestState.Completed;
-                _quest.OnQuestCompleted(this);
-            }
-
             if (IsAnyRequiredObjectiveFailed())
             {
                 State = QuestState.Failed;
                 _quest.OnQuestFailed(this);
+            }
+            else if (AreRequiredObjectivesComplete())
+            {
+                State = QuestState.Completed;
+                _quest.OnQuestCompleted(this);
             }
 
             ActivateFirstInactiveObjectiveIfNoneAreInProgress();
@@ -138,9 +146,7 @@ namespace Systems.SimpleQuests.Data
         /// </summary>
         [NotNull] public static QuestInstance FromQuest([NotNull] Quest fromQuest)
         {
-            QuestInstance createdInstance = new(fromQuest);
-            QuestInstance instance = fromQuest.Create();
-            return instance;
+            return fromQuest.Create();
         }
 
         internal QuestInstance([NotNull] Quest fromQuest)

@@ -2,7 +2,6 @@
 using JetBrains.Annotations;
 using Systems.SimpleQuests.Data;
 using Systems.SimpleQuests.Data.Enums;
-using UnityEngine;
 
 namespace Systems.SimpleQuests.Abstract
 {
@@ -14,12 +13,12 @@ namespace Systems.SimpleQuests.Abstract
         /// <summary>
         ///     State of this objective
         /// </summary>
-        [field: SerializeField] public QuestState State { get; internal set; } = QuestState.Inactive;
+        public QuestState State { get; internal set; } = QuestState.Inactive;
 
         /// <summary>
         ///     Checks if the objective is required to complete the quest
         /// </summary>
-        public bool IsRequired => true;
+        public virtual bool IsRequired => true;
 
         /// <summary>
         ///     Check if the objective is completed

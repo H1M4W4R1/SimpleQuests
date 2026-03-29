@@ -5,7 +5,9 @@ using Systems.SimpleCore.Storage.Lists;
 using Systems.SimpleCore.Timing;
 using Systems.SimpleQuests.Abstract;
 using Systems.SimpleQuests.Data;
+using Systems.SimpleQuests.Data.Enums;
 using Systems.SimpleQuests.Operations;
+using UnityEngine;
 using UnityEngine.Assertions;
 
 namespace Systems.SimpleQuests.Utility
@@ -23,15 +25,45 @@ namespace Systems.SimpleQuests.Utility
         private static readonly List<QuestInstance> _currentQuests = new();
 
         /// <summary>
+        ///     List of finished quests (completed or failed)
+        /// </summary>
+        private static readonly List<QuestInstance> _finishedQuests = new();
+
+        /// <summary>
+        ///     Read-only access to finished quests
+        /// </summary>
+        public static IReadOnlyList<QuestInstance> FinishedQuests => _finishedQuests;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _isTickSystemHooked = false;
+            _currentQuests.Clear();
+            _finishedQuests.Clear();
+        }
+
+        /// <summary>
         ///     Removes all quests from the list
         /// </summary>
-        public static void ClearAllQuests() => _currentQuests.Clear();
+        public static void ClearAllQuests()
+        {
+            _currentQuests.Clear();
+            _finishedQuests.Clear();
+            if (_isTickSystemHooked)
+            {
+                TickSystem.OnTick -= OnTick;
+                _isTickSystemHooked = false;
+            }
+        }
 
         /// <summary>
         ///     Forces a quest to finish
         /// </summary>
         /// <typeparam name="TQuest">The quest to finish</typeparam>
         /// <returns>True if the quest was found and finished, false otherwise</returns>
+        /// <remarks>
+        ///     The new() constraint prevents using abstract Quest types.
+        /// </remarks>
         public static bool CompleteQuest<TQuest>()
             where TQuest : Quest, new()
         {
@@ -104,6 +136,9 @@ namespace Systems.SimpleQuests.Utility
         /// <summary>
         ///     Tries to start a quest
         /// </summary>
+        /// <remarks>
+        ///     The new() constraint prevents using abstract Quest types.
+        /// </remarks>
         public static OperationResult TryStartQuest<TQuest>([CanBeNull] out QuestInstance instance)
             where TQuest : Quest, new()
         {
@@ -138,9 +173,30 @@ namespace Systems.SimpleQuests.Utility
         }
 
         /// <summary>
-        ///     Gets all quest instances of a quest
+        ///     Tries to start a quest only if no active instance of the same type exists
         /// </summary>
-        public static ROListAccess<TQuest> GetAllInstancesOf<TQuest>()
+        /// <remarks>
+        ///     The new() constraint prevents using abstract Quest types.
+        /// </remarks>
+        public static OperationResult TryStartUniqueQuest<TQuest>([CanBeNull] out QuestInstance instance)
+            where TQuest : Quest, new()
+        {
+            for (int i = 0; i < _currentQuests.Count; i++)
+            {
+                if (_currentQuests[i].Quest is TQuest)
+                {
+                    instance = null;
+                    return QuestOperations.QuestAlreadyStarted();
+                }
+            }
+
+            return TryStartQuest<TQuest>(out instance);
+        }
+
+        /// <summary>
+        ///     Gets all quest objects of the specified type from active quests
+        /// </summary>
+        public static ROListAccess<TQuest> GetAllActiveQuestsOfType<TQuest>()
             where TQuest : Quest
         {
             RWListAccess<TQuest> list = RWListAccess<TQuest>.Create();
@@ -150,7 +206,24 @@ namespace Systems.SimpleQuests.Utility
             {
                 if (_currentQuests[i].Quest is TQuest requestedQuest) refList.Add(requestedQuest);
             }
-            
+
+            return list.ToReadOnly();
+        }
+        
+        /// <summary>
+        ///     Gets all quest objects of the specified type from finished quests
+        /// </summary>
+        public static ROListAccess<TQuest> GetAllFinishedQuestsOfType<TQuest>()
+            where TQuest : Quest
+        {
+            RWListAccess<TQuest> list = RWListAccess<TQuest>.Create();
+            List<TQuest> refList = list.List;
+
+            for (int i = 0; i < _finishedQuests.Count; i++)
+            {
+                if (_finishedQuests[i].Quest is TQuest requestedQuest) refList.Add(requestedQuest);
+            }
+
             return list.ToReadOnly();
         }
 
@@ -170,10 +243,10 @@ namespace Systems.SimpleQuests.Utility
             return list.ToReadOnly();
         }
 
-        /// <summary> 
-        ///     Gets the first quest instance of a quest
+        /// <summary>
+        ///     Gets the first quest of the specified type from active quests
         /// </summary>
-        [CanBeNull] public static TQuest GetFirstQuestInstanceOf<TQuest>()
+        [CanBeNull] public static TQuest GetFirstActiveQuestOfType<TQuest>()
             where TQuest : Quest
         {
             for (int i = 0; i < _currentQuests.Count; i++)
@@ -183,6 +256,21 @@ namespace Systems.SimpleQuests.Utility
 
             return null;
         }
+        
+        /// <summary>
+        ///     Gets the first quest of the specified type from finished quests
+        /// </summary>
+        [CanBeNull] public static TQuest GetFirstFinishedQuestOfType<TQuest>()
+            where TQuest : Quest
+        {
+            for (int i = 0; i < _finishedQuests.Count; i++)
+            {
+                if (_finishedQuests[i].Quest is TQuest requestedQuest) return requestedQuest;
+            }
+
+            return null;
+        }
+
 
         /// <summary>
         ///     Gets the first quest instance of a quest
@@ -203,7 +291,15 @@ namespace Systems.SimpleQuests.Utility
         /// </summary>
         private static void OnTick(float deltaTime)
         {
-            for (int i = 0; i < _currentQuests.Count; i++) _currentQuests[i].Tick(deltaTime);
+            for (int i = _currentQuests.Count - 1; i >= 0; i--)
+            {
+                _currentQuests[i].Tick(deltaTime);
+                if (_currentQuests[i].State is QuestState.Completed or QuestState.Failed)
+                {
+                    _finishedQuests.Add(_currentQuests[i]);
+                    _currentQuests.RemoveAt(i);
+                }
+            }
         }
     }
 }

@@ -7,8 +7,13 @@ namespace Systems.SimpleQuests.Operations
         public const ushort SYSTEM_QUESTS = 0x0009;
 
         public const ushort SUCCESS_STARTED = 0x0001;
+        public const ushort ALREADY_STARTED = 0x0002;
+        
         public static OperationResult Permitted() => 
             OperationResult.Success(SYSTEM_QUESTS, OperationResult.SUCCESS_PERMITTED);
+        
+        public static OperationResult QuestAlreadyStarted() => 
+            OperationResult.Error(SYSTEM_QUESTS, ALREADY_STARTED);
         
         public static OperationResult Started() => 
             OperationResult.Success(SYSTEM_QUESTS, SUCCESS_STARTED);

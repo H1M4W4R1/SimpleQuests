@@ -24,7 +24,7 @@ namespace Systems.SimpleQuests.Abstract
         /// <summary>
         ///     Checks if quest can be started
         /// </summary>
-        protected internal OperationResult CanBeStarted() =>
+        protected internal virtual OperationResult CanBeStarted() =>
             QuestOperations.Permitted();
         
         /// <summary>

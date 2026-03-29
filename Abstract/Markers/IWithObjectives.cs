@@ -80,18 +80,16 @@ namespace Systems.SimpleQuests.Abstract.Markers
             if (objective is IWithObjectives withObjectives)
                 withObjectives.TickCompletionStatusCheck(questInstance, deltaTime);
 
-            // Handle completion
-            if (objective.ShouldBeComplete())
-            {
-                objective.State = QuestState.Completed;
-                objective.OnQuestObjectiveCompleted(questInstance);
-            }
-
-            // Handle failure
+            // Handle failure first - failure takes priority over completion
             if (objective.ShouldBeFailed())
             {
                 objective.State = QuestState.Failed;
                 objective.OnQuestObjectiveFailed(questInstance);
+            }
+            else if (objective.ShouldBeComplete())
+            {
+                objective.State = QuestState.Completed;
+                objective.OnQuestObjectiveCompleted(questInstance);
             }
         }
     }

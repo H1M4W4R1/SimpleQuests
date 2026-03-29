@@ -1,7 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using Systems.SimpleQuests.Abstract;
 using Systems.SimpleQuests.Abstract.Markers;
+using Systems.SimpleQuests.Data.Enums;
+using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Systems.SimpleQuests.Objectives
 {
@@ -24,8 +28,13 @@ namespace Systems.SimpleQuests.Objectives
         /// <summary>
         ///     Adds an objective to the list
         /// </summary>
-        [NotNull] public CombinedQuestObjective WithObjective([NotNull] QuestObjective objective)
+        [NotNull] public CombinedQuestObjective WithObjective([CanBeNull] QuestObjective objective)
         {
+            if (ReferenceEquals(objective, null))
+            {
+                Debug.LogError("Trying to add null objective to combined objective");
+                return this;
+            }
             _objectives.Add(objective);
             return this;
         }
@@ -37,14 +46,11 @@ namespace Systems.SimpleQuests.Objectives
         {
             for (int i = 0; i < _objectives.Count; i++)
             {
-                // Skip non-required objectives
                 QuestObjective objective = _objectives[i];
                 if (!objective.IsRequired) continue;
-                
-                if (!objective.ShouldBeComplete()) return false;
+                if (objective.State != QuestState.Completed) return false;
             }
-            
-            // If all required objectives are completed, return true
+
             return true;
         }
 
@@ -55,20 +61,20 @@ namespace Systems.SimpleQuests.Objectives
         {
             for (int i = 0; i < _objectives.Count; i++)
             {
-                // Skip non-required objectives
                 QuestObjective objective = _objectives[i];
                 if (!objective.IsRequired) continue;
-            
-                // If any required objective is failed, return true
-                if (objective.ShouldBeFailed()) return true;
+                if (objective.State == QuestState.Failed) return true;
             }
-            
+
             return false;
         }
 
+        /// <summary>
+        ///     No-op: child objectives of a CombinedQuestObjective are all activated simultaneously
+        ///     when the parent starts. Sequential activation is handled by QuestInstance, not here.
+        /// </summary>
         void IWithObjectives.AfterQuestIterationComplete()
         {
-            // This should be handled by quest instance
         }
     }
 }
