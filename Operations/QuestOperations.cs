@@ -8,6 +8,7 @@ namespace Systems.SimpleQuests.Operations
 
         public const ushort SUCCESS_STARTED = 0x0001;
         public const ushort ALREADY_STARTED = 0x0002;
+        public const ushort QUEST_NOT_FOUND = 0x0003;
         
         public static OperationResult Permitted() => 
             OperationResult.Success(SYSTEM_QUESTS, OperationResult.SUCCESS_PERMITTED);
@@ -15,7 +16,10 @@ namespace Systems.SimpleQuests.Operations
         public static OperationResult QuestAlreadyStarted() => 
             OperationResult.Error(SYSTEM_QUESTS, ALREADY_STARTED);
         
-        public static OperationResult Started() => 
+        public static OperationResult QuestNotFound() =>
+            OperationResult.Error(SYSTEM_QUESTS, QUEST_NOT_FOUND);
+
+        public static OperationResult Started() =>
             OperationResult.Success(SYSTEM_QUESTS, SUCCESS_STARTED);
     }
 }

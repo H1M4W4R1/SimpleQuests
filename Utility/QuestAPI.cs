@@ -8,7 +8,6 @@ using Systems.SimpleQuests.Data;
 using Systems.SimpleQuests.Data.Enums;
 using Systems.SimpleQuests.Operations;
 using UnityEngine;
-using UnityEngine.Assertions;
 
 namespace Systems.SimpleQuests.Utility
 {
@@ -37,6 +36,10 @@ namespace Systems.SimpleQuests.Utility
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            if (_isTickSystemHooked)
+            {
+                TickSystem.OnTick -= OnTick;
+            }
             _isTickSystemHooked = false;
             _currentQuests.Clear();
             _finishedQuests.Clear();
@@ -154,7 +157,12 @@ namespace Systems.SimpleQuests.Utility
 
             // Create new instance
             TQuest quest = QuestDatabase.GetExact<TQuest>();
-            Assert.IsNotNull(quest, "Quest was not found in database");
+            if (ReferenceEquals(quest, null))
+            {
+                Debug.LogError($"Quest of type {typeof(TQuest).Name} was not found in database");
+                instance = null;
+                return QuestOperations.QuestNotFound();
+            }
 
             // Check if quest can be started
             OperationResult result = quest.CanBeStarted();

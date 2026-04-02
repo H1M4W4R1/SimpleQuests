@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using Systems.SimpleQuests.Abstract;
 using Systems.SimpleQuests.Abstract.Markers;
+using Systems.SimpleQuests.Data;
 using Systems.SimpleQuests.Data.Enums;
 using UnityEngine;
-using UnityEngine.Assertions;
 
 namespace Systems.SimpleQuests.Objectives
 {
@@ -37,6 +37,21 @@ namespace Systems.SimpleQuests.Objectives
             }
             _objectives.Add(objective);
             return this;
+        }
+
+        /// <summary>
+        ///     Activates all child objectives simultaneously when the combined objective starts
+        /// </summary>
+        protected internal override void OnQuestObjectiveStarted(QuestInstance quest)
+        {
+            base.OnQuestObjectiveStarted(quest);
+
+            for (int i = 0; i < _objectives.Count; i++)
+            {
+                QuestObjective objective = _objectives[i];
+                objective.State = QuestState.InProgress;
+                objective.OnQuestObjectiveStarted(quest);
+            }
         }
 
         /// <summary>

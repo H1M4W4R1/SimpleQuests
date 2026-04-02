@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using Systems.SimpleCore.Storage.Lists;
 using Systems.SimpleQuests.Abstract;
 using Systems.SimpleQuests.Abstract.Markers;
 using Systems.SimpleQuests.Data.Enums;
 using UnityEngine;
-using UnityEngine.Assertions;
 
 namespace Systems.SimpleQuests.Data
 {
@@ -58,6 +58,12 @@ namespace Systems.SimpleQuests.Data
         /// </summary>
         public void Start()
         {
+            if (State != QuestState.Inactive)
+            {
+                Debug.LogWarning($"Attempted to start quest {Quest.name} but it is already in state {State}");
+                return;
+            }
+
             State = QuestState.InProgress;
             _quest.OnQuestStarted(this);
 
@@ -74,7 +80,9 @@ namespace Systems.SimpleQuests.Data
             {
                 QuestObjective objective = _objectives[i];
                 if (!objective.IsRequired) continue;
+                if (objective.State is QuestState.Completed or QuestState.Failed) continue;
                 objective.State = QuestState.Completed;
+                objective.OnQuestObjectiveCompleted(this);
             }
         }
 
@@ -88,7 +96,9 @@ namespace Systems.SimpleQuests.Data
             {
                 QuestObjective objective = _objectives[i];
                 if (!objective.IsRequired) continue;
+                if (objective.State is QuestState.Completed or QuestState.Failed) continue;
                 objective.State = QuestState.Failed;
+                objective.OnQuestObjectiveFailed(this);
             }
         }
         
@@ -97,6 +107,8 @@ namespace Systems.SimpleQuests.Data
         /// </summary>
         void IWithObjectives.AfterQuestIterationComplete()
         {
+            if (_objectives.Count == 0) return;
+
             if (IsAnyRequiredObjectiveFailed())
             {
                 State = QuestState.Failed;
@@ -138,6 +150,100 @@ namespace Systems.SimpleQuests.Data
                 if (objective.State == QuestState.Failed) return true;
             }
 
+            return false;
+        }
+
+        /// <summary>
+        ///     Gets the first objective of the specified type
+        /// </summary>
+        [CanBeNull] public TQuestObjective GetObjective<TQuestObjective>() where TQuestObjective : QuestObjective
+        {
+            for (int i = 0; i < _objectives.Count; i++)
+            {
+                if (_objectives[i] is TQuestObjective typed) return typed;
+            }
+            return null;
+        }
+
+        /// <summary>
+        ///     Gets all objectives of the specified type
+        /// </summary>
+        public ROListAccess<TQuestObjective> GetObjectives<TQuestObjective>() where TQuestObjective : QuestObjective
+        {
+            RWListAccess<TQuestObjective> list = RWListAccess<TQuestObjective>.Create();
+            List<TQuestObjective> refList = list.List;
+
+            for (int i = 0; i < _objectives.Count; i++)
+            {
+                if (_objectives[i] is TQuestObjective typed) refList.Add(typed);
+            }
+
+            return list.ToReadOnly();
+        }
+
+        /// <summary>
+        ///     Tries to complete the first in-progress objective of the specified type
+        /// </summary>
+        public bool TryCompleteObjective<TQuestObjective>() where TQuestObjective : QuestObjective
+        {
+            for (int i = 0; i < _objectives.Count; i++)
+            {
+                if (_objectives[i] is not TQuestObjective objective) continue;
+                if (objective.State != QuestState.InProgress) continue;
+                objective.State = QuestState.Completed;
+                objective.OnQuestObjectiveCompleted(this);
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        ///     Tries to fail the first in-progress objective of the specified type
+        /// </summary>
+        public bool TryFailObjective<TQuestObjective>() where TQuestObjective : QuestObjective
+        {
+            for (int i = 0; i < _objectives.Count; i++)
+            {
+                if (_objectives[i] is not TQuestObjective objective) continue;
+                if (objective.State != QuestState.InProgress) continue;
+                objective.State = QuestState.Failed;
+                objective.OnQuestObjectiveFailed(this);
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        ///     Tries to complete a specific objective instance
+        /// </summary>
+        public bool TryCompleteObjective([NotNull] QuestObjective objective)
+        {
+            if (objective.State != QuestState.InProgress) return false;
+
+            for (int i = 0; i < _objectives.Count; i++)
+            {
+                if (!ReferenceEquals(_objectives[i], objective)) continue;
+                objective.State = QuestState.Completed;
+                objective.OnQuestObjectiveCompleted(this);
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        ///     Tries to fail a specific objective instance
+        /// </summary>
+        public bool TryFailObjective([NotNull] QuestObjective objective)
+        {
+            if (objective.State != QuestState.InProgress) return false;
+
+            for (int i = 0; i < _objectives.Count; i++)
+            {
+                if (!ReferenceEquals(_objectives[i], objective)) continue;
+                objective.State = QuestState.Failed;
+                objective.OnQuestObjectiveFailed(this);
+                return true;
+            }
             return false;
         }
 
