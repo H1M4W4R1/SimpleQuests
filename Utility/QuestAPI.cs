@@ -38,7 +38,7 @@ namespace Systems.SimpleQuests.Utility
         {
             if (_isTickSystemHooked)
             {
-                TickSystem.OnTick -= OnTick;
+                TickSystem.UnregisterHandler(OnTick);
             }
             _isTickSystemHooked = false;
             _currentQuests.Clear();
@@ -54,7 +54,7 @@ namespace Systems.SimpleQuests.Utility
             _finishedQuests.Clear();
             if (_isTickSystemHooked)
             {
-                TickSystem.OnTick -= OnTick;
+                TickSystem.UnregisterHandler(OnTick);
                 _isTickSystemHooked = false;
             }
         }
@@ -145,13 +145,10 @@ namespace Systems.SimpleQuests.Utility
         public static OperationResult TryStartQuest<TQuest>([CanBeNull] out QuestInstance instance)
             where TQuest : Quest, new()
         {
-            // Ensure tick system exists
-            TickSystem.EnsureExists();
-
-            // and is hooked properly
+            // Ensure tick system is hooked properly
             if (!_isTickSystemHooked)
             {
-                TickSystem.OnTick += OnTick;
+                TickSystem.RegisterHandler(OnTick);
                 _isTickSystemHooked = true;
             }
 
