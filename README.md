@@ -20,7 +20,7 @@ Simple Quests is a lightweight, data-driven quest system for Unity games. It pro
 
 ## Creating a Custom Quest
 
-Create a quest by extending the `Quest` base class and implementing objectives:
+Create a quest by extending the `Quest` base class and adding objectives in `Create()`:
 
 ```csharp
 using Systems.SimpleQuests.Abstract;
@@ -40,6 +40,11 @@ public class MyQuest : Quest
         Debug.Log($"Quest started: {name}");
     }
 
+    protected internal override void OnQuestStartFailed(OperationResult reason)
+    {
+        Debug.Log($"Quest failed to start: {reason}");
+    }
+
     protected internal override void OnQuestCompleted(QuestInstance instance)
     {
         Debug.Log($"Quest completed: {name}");
@@ -55,7 +60,7 @@ public class MyQuest : Quest
 
 ## Creating Custom Objectives
 
-Extend `QuestObjective` and implement completion/failure logic:
+Extend `QuestObjective` and implement completion logic. `ShouldBeComplete()` and `ShouldBeFailed()` are polled automatically each frame for every in-progress objective:
 
 ```csharp
 using Systems.SimpleQuests.Abstract;
@@ -71,12 +76,14 @@ public class CollectItemObjective : QuestObjective
         _itemsNeeded = itemsNeeded;
     }
 
+    // Called every frame — return true when the objective should complete
     public override bool ShouldBeComplete() => _itemsCollected >= _itemsNeeded;
 
-    public void OnItemCollected()
-    {
-        _itemsCollected++;
-    }
+    // Called every frame — return true to fail the objective (failure takes priority over completion)
+    public override bool ShouldBeFailed() => false;
+
+    // Notify the objective that an item was collected
+    public void OnItemCollected() => _itemsCollected++;
 
     protected internal override void OnQuestObjectiveStarted(QuestInstance quest)
     {
@@ -87,47 +94,71 @@ public class CollectItemObjective : QuestObjective
     {
         Debug.Log("Collection objective completed!");
     }
+
+    // Called every frame while the objective is in progress
+    protected internal override void OnQuestObjectiveTick(QuestInstance questInstance, float deltaTime)
+    {
+        // Use for per-frame logic, e.g. polling input or updating a timer
+    }
 }
 ```
 
 ## Starting and Managing Quests
 
-Use the `QuestAPI` to start, complete, and track quests:
+Use `QuestAPI` to start, complete, and track quests:
 
 ```csharp
 using Systems.SimpleQuests.Utility;
 
-// Start a quest
+// Start a quest (multiple instances allowed)
 var result = QuestAPI.TryStartQuest<MyQuest>(out QuestInstance questInstance);
 if (result)
 {
     Debug.Log("Quest started successfully");
 }
 
-// Start a unique quest (only one instance allowed at a time)
+// Start a unique quest (only one active instance allowed at a time)
 QuestAPI.TryStartUniqueQuest<MyQuest>(out questInstance);
 
-// Force quest completion
+// Force complete or fail an active quest
 QuestAPI.CompleteQuest<MyQuest>();
-
-// Force quest failure
 QuestAPI.FailQuest<MyQuest>();
 
-// Get active quest
+// Programmatically complete or fail a specific objective on an instance
+questInstance.TryCompleteObjective<CollectItemObjective>();
+questInstance.TryFailObjective<DefeatEnemyObjective>();
+
+// Get the first active quest of a type
 var activeQuest = QuestAPI.GetFirstActiveQuestOfType<MyQuest>();
 
-// Get all finished quests
+// Get all finished quests (completed or failed) of a type
 var finishedQuests = QuestAPI.GetAllFinishedQuestsOfType<MyQuest>();
+
+// All finished quests regardless of type
+var allFinished = QuestAPI.FinishedQuests;
 
 // Clear all quests
 QuestAPI.ClearAllQuests();
 ```
 
-## Combining Objectives
-
-Use `CombinedQuestObjective` to activate multiple objectives simultaneously:
+## Accessing Objectives on an Instance
 
 ```csharp
+// Get the first objective of a type
+var collectObjective = questInstance.GetObjective<CollectItemObjective>();
+collectObjective?.OnItemCollected();
+
+// Get all objectives of a type
+var allCollectObjectives = questInstance.GetObjectives<CollectItemObjective>();
+```
+
+## Combining Objectives
+
+Use `CombinedQuestObjective` to activate multiple objectives simultaneously. All child objectives start at the same time and the combined objective completes when all required children complete:
+
+```csharp
+using Systems.SimpleQuests.Objectives;
+
 var combined = new CombinedQuestObjective()
     .WithObjective(new KillEnemyObjective())
     .WithObjective(new CollectLootObjective());
@@ -153,7 +184,7 @@ foreach (var objective in questInstance.Objectives)
 {
     if (objective.State == QuestState.InProgress)
     {
-        Debug.Log($"Current objective: {objective}");
+        Debug.Log($"Objective in progress: {objective}");
     }
 }
 ```
@@ -166,12 +197,12 @@ Create optional objectives by overriding `IsRequired`:
 public class BonusObjective : QuestObjective
 {
     public override bool IsRequired => false; // Optional objective
-    
+
     // ... implementation
 }
 ```
 
-Optional objectives can fail without failing the quest, allowing for bonus tasks and side objectives.
+Optional objectives fail independently without failing the quest. Required objectives activate sequentially — only one required objective is `InProgress` at a time. Optional objectives that appear before the next required objective in the list activate alongside it.
 
 # Architecture Overview
 
@@ -180,7 +211,7 @@ Optional objectives can fail without failing the quest, allowing for bonus tasks
 - **QuestObjective**: Base class for individual quest tasks
 - **QuestDatabase**: Addressable database for quest management
 - **QuestAPI**: Static API for quest management and querying
-- **QuestState**: Enum tracking quest and objective progression
-- **CombinedQuestObjective**: Composite pattern for grouped objectives
+- **QuestState**: Enum tracking quest and objective progression (`Hidden`, `Inactive`, `InProgress`, `Completed`, `Failed`)
+- **CombinedQuestObjective**: Composite pattern for grouped objectives that all activate at once
 
-The system integrates with the SimpleCore tick system for automatic quest updates each frame.
+The system integrates with the SimpleCore tick system for automatic per-frame objective evaluation. Each frame, every in-progress objective is ticked, then `ShouldBeFailed()` and `ShouldBeComplete()` are checked (failure takes priority). When all required objectives finish, the quest moves to the finished list automatically.
