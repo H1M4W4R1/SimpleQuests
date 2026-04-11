@@ -41,6 +41,7 @@ namespace Systems.SimpleQuests.Utility
             {
                 TickSystem.UnregisterHandler(OnTick);
             }
+
             _isTickSystemHooked = false;
             _currentQuests.Clear();
             _finishedQuests.Clear();
@@ -145,7 +146,9 @@ namespace Systems.SimpleQuests.Utility
         /// <remarks>
         ///     The new() constraint prevents using abstract Quest types.
         /// </remarks>
-        public static OperationResult TryStartQuest<TQuest>([CanBeNull] out QuestInstance instance)
+        public static OperationResult TryStartQuest<TQuest>(
+            [CanBeNull] out QuestInstance instance,
+            in StartQuestFlags flags = default)
             where TQuest : Quest, new()
         {
             // Ensure tick system is hooked properly
@@ -167,11 +170,26 @@ namespace Systems.SimpleQuests.Utility
             // Enforce single-instance constraint for IUniqueQuest implementations
             if (quest is IUniqueQuest)
             {
-                for (int i = 0; i < _currentQuests.Count; i++)
+                // Handle running instances
+                if ((flags & StartQuestFlags.AllowStartUniqueIfRunning) == 0)
                 {
-                    if (_currentQuests[i].Quest is not TQuest) continue;
-                    instance = null;
-                    return QuestOperations.QuestAlreadyStarted();
+                    for (int i = 0; i < _currentQuests.Count; i++)
+                    {
+                        if (_currentQuests[i].Quest is not TQuest) continue;
+                        instance = null;
+                        return QuestOperations.QuestAlreadyStarted();
+                    }
+                }
+
+                // Handle finished instances
+                if ((flags & StartQuestFlags.AllowStartUniqueIfFinished) == 0)
+                {
+                    for (int i = 0; i < _finishedQuests.Count; i++)
+                    {
+                        if (_finishedQuests[i].Quest is not TQuest) continue;
+                        instance = null;
+                        return QuestOperations.QuestAlreadyFinished();
+                    }
                 }
             }
 
@@ -207,7 +225,7 @@ namespace Systems.SimpleQuests.Utility
 
             return list.ToReadOnly();
         }
-        
+
         /// <summary>
         ///     Gets all quest objects of the specified type from finished quests
         /// </summary>
@@ -254,7 +272,7 @@ namespace Systems.SimpleQuests.Utility
 
             return null;
         }
-        
+
         /// <summary>
         ///     Gets the first quest of the specified type from finished quests
         /// </summary>
