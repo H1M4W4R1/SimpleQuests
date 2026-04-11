@@ -1,3 +1,4 @@
+using Systems.SimpleCore.Operations;
 using Systems.SimpleQuests.Utility;
 using UnityEngine;
 
@@ -17,11 +18,8 @@ namespace Systems.SimpleQuests.Examples.Scripts
         [ContextMenu("Start Unique Quest")]
         private void StartUniqueQuest()
         {
-            var result = QuestAPI.TryStartQuest<ExampleUniqueQuest>(out _);
-            if (result)
-                Debug.Log("Unique quest started successfully.");
-            else
-                Debug.Log($"Unique quest start rejected: {result}");
+            OperationResult result = QuestAPI.TryStartQuest<ExampleUniqueQuest>(out _);
+            Debug.Log(result ? "Unique quest started successfully." : $"Unique quest start rejected: {result}");
         }
 
         /// <summary>
