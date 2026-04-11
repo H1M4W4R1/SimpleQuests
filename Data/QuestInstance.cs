@@ -40,6 +40,16 @@ namespace Systems.SimpleQuests.Data
         public QuestState State { get; private set; } = QuestState.Inactive;
 
         /// <summary>
+        ///     Returns true if this quest instance is completed
+        /// </summary>
+        public bool IsCompleted => State == QuestState.Completed;
+
+        /// <summary>
+        ///     Returns true if this quest instance is failed
+        /// </summary>
+        public bool IsFailed => State == QuestState.Failed;
+
+        /// <summary>
         ///     Adds an objective to the list
         /// </summary>
         [NotNull] public QuestInstance WithObjective([CanBeNull] QuestObjective objective)

@@ -103,6 +103,20 @@ public class CollectItemObjective : QuestObjective
 }
 ```
 
+## Unique Quests
+
+Implement `IUniqueQuest` on a quest class to prevent more than one active instance at a time. `TryStartQuest` will return `QuestAlreadyStarted` if an instance of that type is already running:
+
+```csharp
+using Systems.SimpleQuests.Abstract;
+using Systems.SimpleQuests.Abstract.Markers;
+
+public class MyUniqueQuest : Quest, IUniqueQuest
+{
+    // Only one active instance allowed at a time — enforced automatically by TryStartQuest
+}
+```
+
 ## Starting and Managing Quests
 
 Use `QuestAPI` to start, complete, and track quests:
@@ -110,15 +124,12 @@ Use `QuestAPI` to start, complete, and track quests:
 ```csharp
 using Systems.SimpleQuests.Utility;
 
-// Start a quest (multiple instances allowed)
+// Start a quest (multiple instances allowed unless IUniqueQuest is implemented)
 var result = QuestAPI.TryStartQuest<MyQuest>(out QuestInstance questInstance);
 if (result)
 {
     Debug.Log("Quest started successfully");
 }
-
-// Start a unique quest (only one active instance allowed at a time)
-QuestAPI.TryStartUniqueQuest<MyQuest>(out questInstance);
 
 // Force complete or fail an active quest
 QuestAPI.CompleteQuest<MyQuest>();
@@ -127,6 +138,14 @@ QuestAPI.FailQuest<MyQuest>();
 // Programmatically complete or fail a specific objective on an instance
 questInstance.TryCompleteObjective<CollectItemObjective>();
 questInstance.TryFailObjective<DefeatEnemyObjective>();
+
+// Check if at least one instance of a quest type has been completed or failed
+bool completed = QuestAPI.IsQuestCompleted<MyQuest>();
+bool failed    = QuestAPI.IsQuestFailed<MyQuest>();
+
+// Check state on a specific instance
+bool instanceCompleted = questInstance.IsCompleted;
+bool instanceFailed    = questInstance.IsFailed;
 
 // Get the first active quest of a type
 var activeQuest = QuestAPI.GetFirstActiveQuestOfType<MyQuest>();
@@ -168,7 +187,7 @@ questInstance.WithObjective(combined);
 
 ## Checking Quest States
 
-Monitor quest progress using `QuestState`:
+Monitor quest progress using `QuestState` or the convenience properties on `QuestInstance`:
 
 ```csharp
 using Systems.SimpleQuests.Data.Enums;
@@ -178,6 +197,10 @@ if (questInstance.State == QuestState.Completed)
 {
     Debug.Log("Quest is complete!");
 }
+
+// Convenience bool properties on QuestInstance
+if (questInstance.IsCompleted) { /* ... */ }
+if (questInstance.IsFailed)    { /* ... */ }
 
 // Check individual objectives
 foreach (var objective in questInstance.Objectives)
@@ -212,6 +235,7 @@ Optional objectives fail independently without failing the quest. Required objec
 - **QuestDatabase**: Addressable database for quest management
 - **QuestAPI**: Static API for quest management and querying
 - **QuestState**: Enum tracking quest and objective progression (`Hidden`, `Inactive`, `InProgress`, `Completed`, `Failed`)
+- **IUniqueQuest**: Marker interface; implement on a `Quest` to enforce a single active instance at a time
 - **CombinedQuestObjective**: Composite pattern for grouped objectives that all activate at once
 
 The system integrates with the SimpleCore tick system for automatic per-frame objective evaluation. Each frame, every in-progress objective is ticked, then `ShouldBeFailed()` and `ShouldBeComplete()` are checked (failure takes priority). When all required objectives finish, the quest moves to the finished list automatically.

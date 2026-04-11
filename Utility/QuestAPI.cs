@@ -4,6 +4,7 @@ using Systems.SimpleCore.Operations;
 using Systems.SimpleCore.Storage.Lists;
 using Systems.SimpleCore.Timing;
 using Systems.SimpleQuests.Abstract;
+using Systems.SimpleQuests.Abstract.Markers;
 using Systems.SimpleQuests.Data;
 using Systems.SimpleQuests.Data.Enums;
 using Systems.SimpleQuests.Operations;
@@ -137,7 +138,9 @@ namespace Systems.SimpleQuests.Utility
         }
 
         /// <summary>
-        ///     Tries to start a quest
+        ///     Tries to start a quest.
+        ///     If the quest implements <see cref="Systems.SimpleQuests.Abstract.Markers.IUniqueQuest"/>,
+        ///     the attempt fails when an active instance of the same type already exists.
         /// </summary>
         /// <remarks>
         ///     The new() constraint prevents using abstract Quest types.
@@ -161,6 +164,17 @@ namespace Systems.SimpleQuests.Utility
                 return QuestOperations.QuestNotFound();
             }
 
+            // Enforce single-instance constraint for IUniqueQuest implementations
+            if (quest is IUniqueQuest)
+            {
+                for (int i = 0; i < _currentQuests.Count; i++)
+                {
+                    if (_currentQuests[i].Quest is not TQuest) continue;
+                    instance = null;
+                    return QuestOperations.QuestAlreadyStarted();
+                }
+            }
+
             // Check if quest can be started
             OperationResult result = quest.CanBeStarted();
             if (!result)
@@ -175,27 +189,6 @@ namespace Systems.SimpleQuests.Utility
             instance.Start();
             _currentQuests.Add(instance);
             return QuestOperations.Started();
-        }
-
-        /// <summary>
-        ///     Tries to start a quest only if no active instance of the same type exists
-        /// </summary>
-        /// <remarks>
-        ///     The new() constraint prevents using abstract Quest types.
-        /// </remarks>
-        public static OperationResult TryStartUniqueQuest<TQuest>([CanBeNull] out QuestInstance instance)
-            where TQuest : Quest, new()
-        {
-            for (int i = 0; i < _currentQuests.Count; i++)
-            {
-                if (_currentQuests[i].Quest is TQuest)
-                {
-                    instance = null;
-                    return QuestOperations.QuestAlreadyStarted();
-                }
-            }
-
-            return TryStartQuest<TQuest>(out instance);
         }
 
         /// <summary>
@@ -276,6 +269,33 @@ namespace Systems.SimpleQuests.Utility
             return null;
         }
 
+        /// <summary>
+        ///     Returns true if at least one finished instance of the specified quest type is completed
+        /// </summary>
+        public static bool IsQuestCompleted<TQuest>()
+            where TQuest : Quest
+        {
+            for (int i = 0; i < _finishedQuests.Count; i++)
+            {
+                if (_finishedQuests[i].Quest is TQuest && _finishedQuests[i].IsCompleted) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        ///     Returns true if at least one finished instance of the specified quest type is failed
+        /// </summary>
+        public static bool IsQuestFailed<TQuest>()
+            where TQuest : Quest
+        {
+            for (int i = 0; i < _finishedQuests.Count; i++)
+            {
+                if (_finishedQuests[i].Quest is TQuest && _finishedQuests[i].IsFailed) return true;
+            }
+
+            return false;
+        }
 
         /// <summary>
         ///     Gets the first quest instance of a quest
