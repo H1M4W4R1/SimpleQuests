@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using JetBrains.Annotations;
 using Systems.SimpleQuests.Abstract;
 using Systems.SimpleQuests.Abstract.Markers;
@@ -13,7 +12,7 @@ namespace Systems.SimpleQuests.Objectives
     ///     Objective consisting of multiple objectives to complete that
     ///     are activated at same time
     /// </summary>
-    public sealed class CombinedQuestObjective : QuestObjective, IWithObjectives<CombinedQuestObjective>
+    [UsedImplicitly] public sealed class CombinedQuestObjective : QuestObjective, IWithObjectives<CombinedQuestObjective>
     {
         /// <summary>
         ///     List of objectives that need to be completed

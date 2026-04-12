@@ -19,7 +19,7 @@ namespace Systems.SimpleQuests.Abstract
         /// <remarks>
         ///     You should apply objectives to the instance and return it.
         /// </remarks>
-        [NotNull] public virtual QuestInstance Create() => new QuestInstance(this);
+        [NotNull] public virtual QuestInstance Create() => new(this);
 
         /// <summary>
         ///     Checks if quest can be started

@@ -14,7 +14,7 @@ namespace Systems.SimpleQuests.Abstract.Markers
         /// <summary>
         ///     Adds an objective to the list
         /// </summary>
-        public TSelf WithObjective([NotNull] QuestObjective objective);
+        [UsedImplicitly] public TSelf WithObjective([NotNull] QuestObjective objective);
     }
 
     public interface IWithObjectives
