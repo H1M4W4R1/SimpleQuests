@@ -22,12 +22,12 @@ namespace Systems.SimpleQuests.Utility
         /// <summary>
         ///     List of current quests
         /// </summary>
-        private static readonly List<QuestInstance> _currentQuests = new();
+        private static readonly List<QuestInstance> _currentQuests = new List<QuestInstance>();
 
         /// <summary>
         ///     List of finished quests (completed or failed)
         /// </summary>
-        private static readonly List<QuestInstance> _finishedQuests = new();
+        private static readonly List<QuestInstance> _finishedQuests = new List<QuestInstance>();
 
         /// <summary>
         ///     Read-only access to finished quests
@@ -344,5 +344,12 @@ namespace Systems.SimpleQuests.Utility
                 }
             }
         }
+
+#if UNITY_INCLUDE_TESTS
+        internal static void TickForTests(float deltaTime)
+        {
+            OnTick(deltaTime);
+        }
+#endif
     }
 }

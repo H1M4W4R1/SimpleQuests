@@ -76,10 +76,10 @@ public class CollectItemObjective : QuestObjective
         _itemsNeeded = itemsNeeded;
     }
 
-    // Called every frame — return true when the objective should complete
+    // Called every frame - return true when the objective should complete
     public override bool ShouldBeComplete() => _itemsCollected >= _itemsNeeded;
 
-    // Called every frame — return true to fail the objective (failure takes priority over completion)
+    // Called every frame - return true to fail the objective (failure takes priority over completion)
     public override bool ShouldBeFailed() => false;
 
     // Notify the objective that an item was collected
@@ -125,7 +125,7 @@ Use `QuestAPI` to start, complete, and track quests:
 using Systems.SimpleQuests.Utility;
 
 // Start a quest (multiple instances allowed unless IUniqueQuest is implemented)
-var result = QuestAPI.TryStartQuest<MyQuest>(out QuestInstance questInstance);
+OperationResult result = QuestAPI.TryStartQuest<MyQuest>(out QuestInstance questInstance);
 if (result)
 {
     Debug.Log("Quest started successfully");
@@ -148,13 +148,13 @@ bool instanceCompleted = questInstance.IsCompleted;
 bool instanceFailed    = questInstance.IsFailed;
 
 // Get the first active quest of a type
-var activeQuest = QuestAPI.GetFirstActiveQuestOfType<MyQuest>();
+MyQuest activeQuest = QuestAPI.GetFirstActiveQuestOfType<MyQuest>();
 
 // Get all finished quests (completed or failed) of a type
-var finishedQuests = QuestAPI.GetAllFinishedQuestsOfType<MyQuest>();
+ROListAccess<MyQuest> finishedQuests = QuestAPI.GetAllFinishedQuestsOfType<MyQuest>();
 
 // All finished quests regardless of type
-var allFinished = QuestAPI.FinishedQuests;
+IReadOnlyList<QuestInstance> allFinished = QuestAPI.FinishedQuests;
 
 // Clear all quests
 QuestAPI.ClearAllQuests();
@@ -164,11 +164,11 @@ QuestAPI.ClearAllQuests();
 
 ```csharp
 // Get the first objective of a type
-var collectObjective = questInstance.GetObjective<CollectItemObjective>();
+CollectItemObjective collectObjective = questInstance.GetObjective<CollectItemObjective>();
 collectObjective?.OnItemCollected();
 
 // Get all objectives of a type
-var allCollectObjectives = questInstance.GetObjectives<CollectItemObjective>();
+ROListAccess<CollectItemObjective> allCollectObjectives = questInstance.GetObjectives<CollectItemObjective>();
 ```
 
 ## Combining Objectives
@@ -178,7 +178,7 @@ Use `CombinedQuestObjective` to activate multiple objectives simultaneously. All
 ```csharp
 using Systems.SimpleQuests.Objectives;
 
-var combined = new CombinedQuestObjective()
+CombinedQuestObjective combined = new CombinedQuestObjective()
     .WithObjective(new KillEnemyObjective())
     .WithObjective(new CollectLootObjective());
 
@@ -203,8 +203,9 @@ if (questInstance.IsCompleted) { /* ... */ }
 if (questInstance.IsFailed)    { /* ... */ }
 
 // Check individual objectives
-foreach (var objective in questInstance.Objectives)
+for (int objectiveIndex = 0; objectiveIndex < questInstance.Objectives.Count; objectiveIndex++)
 {
+    QuestObjective objective = questInstance.Objectives[objectiveIndex];
     if (objective.State == QuestState.InProgress)
     {
         Debug.Log($"Objective in progress: {objective}");
@@ -225,7 +226,7 @@ public class BonusObjective : QuestObjective
 }
 ```
 
-Optional objectives fail independently without failing the quest. Required objectives activate sequentially — only one required objective is `InProgress` at a time. Optional objectives that appear before the next required objective in the list activate alongside it.
+Optional objectives fail independently without failing the quest. Required objectives activate sequentially - only one required objective is `InProgress` at a time. Optional objectives that appear before the next required objective in the list activate alongside it.
 
 # Architecture Overview
 

@@ -26,7 +26,7 @@ namespace Systems.SimpleQuests.Data
         /// <summary>
         ///     List of all objectives
         /// </summary>
-        private readonly List<QuestObjective> _objectives = new();
+        private readonly List<QuestObjective> _objectives = new List<QuestObjective>();
 
         /// <summary>
         ///     List of all instance objectives
@@ -81,11 +81,12 @@ namespace Systems.SimpleQuests.Data
 
         /// <summary>
         ///     Forces the quest to finish by completing all required objectives.
-        ///     The quest's own state will update on the next tick via AfterQuestIterationComplete.
         /// </summary>
         internal void ForceFinish()
         {
-            for(int i = 0; i < _objectives.Count; i++)
+            if (State is QuestState.Completed or QuestState.Failed) return;
+
+            for (int i = 0; i < _objectives.Count; i++)
             {
                 QuestObjective objective = _objectives[i];
                 if (!objective.IsRequired) continue;
@@ -93,15 +94,19 @@ namespace Systems.SimpleQuests.Data
                 objective.State = QuestState.Completed;
                 objective.OnQuestObjectiveCompleted(this);
             }
+
+            State = QuestState.Completed;
+            _quest.OnQuestCompleted(this);
         }
 
         /// <summary>
         ///     Forces the quest to fail by failing all required objectives.
-        ///     The quest's own state will update on the next tick via AfterQuestIterationComplete.
         /// </summary>
         internal void ForceFail()
         {
-            for(int i = 0; i < _objectives.Count; i++)
+            if (State is QuestState.Completed or QuestState.Failed) return;
+
+            for (int i = 0; i < _objectives.Count; i++)
             {
                 QuestObjective objective = _objectives[i];
                 if (!objective.IsRequired) continue;
@@ -109,6 +114,9 @@ namespace Systems.SimpleQuests.Data
                 objective.State = QuestState.Failed;
                 objective.OnQuestObjectiveFailed(this);
             }
+
+            State = QuestState.Failed;
+            _quest.OnQuestFailed(this);
         }
         
         /// <summary>
@@ -122,11 +130,14 @@ namespace Systems.SimpleQuests.Data
             {
                 State = QuestState.Failed;
                 _quest.OnQuestFailed(this);
+                return;
             }
-            else if (AreRequiredObjectivesComplete())
+
+            if (AreRequiredObjectivesComplete())
             {
                 State = QuestState.Completed;
                 _quest.OnQuestCompleted(this);
+                return;
             }
 
             ActivateFirstInactiveObjectiveIfNoneAreInProgress();
