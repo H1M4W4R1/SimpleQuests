@@ -61,6 +61,9 @@ namespace Systems.SimpleQuests.Examples.Scripts
             _panel = ExampleRuntimePanel.Create(
                 "SimpleQuests Example",
                 "Navigate normal quest start, forced completion, forced failure, and state clearing.");
+            RectTransform rectTransform = _panel.GetComponentInChildren<Image>().GetComponent<RectTransform>();
+            rectTransform.anchoredPosition += new Vector2(100, 0) + rectTransform.sizeDelta;
+                
 
             _panel.AddSection("Normal Quest");
             Button startButton = _panel.AddButton("Start Quest");
