@@ -240,3 +240,10 @@ Optional objectives fail independently without failing the quest. Required objec
 - **CombinedQuestObjective**: Composite pattern for grouped objectives that all activate at once
 
 The system integrates with the SimpleCore tick system for automatic per-frame objective evaluation. Each frame, every in-progress objective is ticked, then `ShouldBeFailed()` and `ShouldBeComplete()` are checked (failure takes priority). When all required objectives finish, the quest moves to the finished list automatically.
+
+## Examples included
+
+- `Examples - Quest Scene.unity`: exposes runtime Unity UI for normal quest start/complete/fail/clear and unique quest duplicate/override/state cases.
+- `ExampleQuestStarter`: runtime UI and context menu driver for normal quest lifecycle operations.
+- `ExampleUniqueQuestStarter`: runtime UI and context menu driver for `IUniqueQuest` duplicate and override cases.
+- `ExampleQuest`, `ExampleUniqueQuest`, and objective examples: configured quest definitions used by the scene.
