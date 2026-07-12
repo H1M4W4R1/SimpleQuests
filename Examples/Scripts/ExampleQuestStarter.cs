@@ -1,5 +1,4 @@
 using Systems.SimpleCore.Examples;
-using Systems.SimpleCore.Operations;
 using Systems.SimpleQuests.Utility;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,6 +7,8 @@ namespace Systems.SimpleQuests.Examples.Scripts
 {
     public sealed class ExampleQuestStarter : MonoBehaviour
     {
+        private static readonly Vector2 PanelPosition = new Vector2(32f, 0f);
+
         [SerializeField] private bool _createRuntimeUI = true;
 
         private ExampleRuntimePanel _panel;
@@ -60,10 +61,8 @@ namespace Systems.SimpleQuests.Examples.Scripts
         {
             _panel = ExampleRuntimePanel.Create(
                 "SimpleQuests Example",
-                "Navigate normal quest start, forced completion, forced failure, and state clearing.");
-            RectTransform rectTransform = _panel.GetComponentInChildren<Image>().GetComponent<RectTransform>();
-            rectTransform.anchoredPosition += new Vector2(100, 0) + rectTransform.sizeDelta;
-                
+                "Navigate normal quest start, forced completion, forced failure, and state clearing.",
+                PanelPosition);
 
             _panel.AddSection("Normal Quest");
             Button startButton = _panel.AddButton("Start Quest");

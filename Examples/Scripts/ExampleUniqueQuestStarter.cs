@@ -12,6 +12,8 @@ namespace Systems.SimpleQuests.Examples.Scripts
     /// </summary>
     public sealed class ExampleUniqueQuestStarter : MonoBehaviour
     {
+        private static readonly Vector2 PanelPosition = new Vector2(584f, 0f);
+
         [SerializeField] private bool _createRuntimeUI = true;
 
         private ExampleRuntimePanel _panel;
@@ -86,7 +88,8 @@ namespace Systems.SimpleQuests.Examples.Scripts
         {
             _panel = ExampleRuntimePanel.Create(
                 "SimpleQuests Unique Example",
-                "Navigate unique quest duplicate rejection, override flags, completion, and state checks.");
+                "Navigate unique quest duplicate rejection, override flags, completion, and state checks.",
+                PanelPosition);
 
             _panel.AddSection("Unique Quest");
             Button startButton = _panel.AddButton("Start Unique Quest");

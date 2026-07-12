@@ -243,6 +243,8 @@ The system integrates with the SimpleCore tick system for automatic per-frame ob
 
 ## Examples included
 
+Open `Examples/Examples - Quest Scene.unity` and enter Play Mode to use the side-by-side runtime panels for the normal quest and unique quest examples.
+
 - `Examples - Quest Scene.unity`: exposes runtime Unity UI for normal quest start/complete/fail/clear and unique quest duplicate/override/state cases.
 - `ExampleQuestStarter`: runtime UI and context menu driver for normal quest lifecycle operations.
 - `ExampleUniqueQuestStarter`: runtime UI and context menu driver for `IUniqueQuest` duplicate and override cases.
